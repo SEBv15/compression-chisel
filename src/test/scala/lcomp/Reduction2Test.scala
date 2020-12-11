@@ -28,6 +28,9 @@ class Reduction2Test extends FlatSpec with ChiselScalatestTester with Matchers {
                 c.io.out(nc).expect(exp.U)
             }
 
+            // Check if the length is correct
+            c.io.outlen.expect((ncompressors/4 + ncompressors).U)
+
             // Check if the data is all at the beginning
             for (nc <- 0 until ncompressors) {
                 c.io.out(nc + ncompressors/4).expect(3.U)

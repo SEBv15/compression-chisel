@@ -15,6 +15,7 @@ class Reduction2(val ncompressors:Int = 64) extends Module {
         val headerin = Input(Vec(ncompressors, UInt(4.W)))
         //val out = Output(UInt((ncompressors * 164).W))
         val out = Output(Vec(ncompressors*10 + ncompressors/4, UInt(16.W))) // First ncompressors/4 words are the headers and the rest is the data
+        val outlen = Output(UInt(log2Ceil(ncompressors*10 + ncompressors/4).W))
     })
 
     // Make the first stage of compressors
@@ -50,6 +51,7 @@ class Reduction2(val ncompressors:Int = 64) extends Module {
 
     // Output the headers and the data
     io.out := headerout ++ stages(stages.length-1)(0).io.out
+    io.outlen := (ncompressors/4).U + stages(stages.length-1)(0).io.outlen
 }
 
 object Reduction2 extends App {
