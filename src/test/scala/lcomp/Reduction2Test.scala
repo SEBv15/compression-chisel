@@ -8,7 +8,7 @@ import scala.math.pow
 
 class Reduction2Test extends FlatSpec with ChiselScalatestTester with Matchers {
     // Number of compressors to test the reduction stage with (32 is max for me before running out of memory)
-    val ncompressors = 32
+    val ncompressors = 64
 
     it should "test-reduction2" in {
         // test case body here

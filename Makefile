@@ -21,3 +21,15 @@ reduction2test:
 
 reduction2verilog:
 	sbt 'runMain lcomp.Reduction2'
+
+reduction3test:
+	sbt 'testOnly lcomp.Reduction3Test --'
+
+reduction3verilog:
+	sbt 'runMain lcomp.Reduction3'
+
+reduction4test:
+	sbt 'testOnly lcomp.Reduction4Test --'
+
+reduction4verilog:
+	sbt 'runMain lcomp.Reduction4'

@@ -39,3 +39,23 @@ Main file: [`Reduction2.scala`](src/main/scala/lcomp/Reduction2.scala)
 Running tests: `make reduction2test` (If you run into memory issues, reduce ncompressors in the test file)
 
 Generating Verilog: `make reduction2verilog`
+
+## Full Reduction v3
+
+Same as v2, but it has an option to specify the maximum number of vec elements for every stage. This results in worse compression, but simpler logic.
+
+Main file: [`Reduction3.scala`](src/main/scala/lcomp/Reduction3.scala)
+
+Running tests: `make reduction3test`
+
+Generating Verilog: `make reduction3verilog`
+
+## Full Reduction v4
+
+Uses the same method as v3 for data reduction, but uses hierarchical headers with their own reduction logic instead of a static 4-bit header.
+
+Main file: [`Reduction4.scala`](src/main/scala/lcomp/Reduction4.scala)
+
+Running tests: `make reduction4test`
+
+Generating Verilog: `make reduction4verilog`

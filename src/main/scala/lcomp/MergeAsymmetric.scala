@@ -19,33 +19,26 @@ import scala.math.pow
  *  @param set_all_unused_to_default If true, all elements outside of the used length will be set to the default value. Otherwise only elements outside of `input_1_length + #inwords` will be set to default. The second option probably produces simpler logic since it only depends on one variable.
  *  @param default The value bits with no input will be assigned. true = all ones, false = all zeros
  */
-class Merge(val inwords:Int = 41, val wordsize:Int = 4, val minwords:Int = 1, val set_all_unused_to_default:Boolean = false, val default:Boolean = false) extends Module {
-    require(minwords <= inwords)
+class MergeAsymmetric(val wordsize:Int = 16, val inwords1:Int = 16, val inwords2:Int = 16, val set_all_unused_to_default:Boolean = false, val default:Boolean = false) extends Module {
     require(wordsize > 0)
-    require(inwords > 0)
-    require(minwords >= 0)
+    require(inwords1 > 0)
+    require(inwords2 > 0)
 
     val io = IO(new Bundle {
-        val len1 = Input(UInt(log2Ceil(inwords).W))
-        val data1 = Input(Vec(inwords, UInt(wordsize.W)))
-        val len2 = Input(UInt(log2Ceil(inwords).W))
-        val data2 = Input(Vec(inwords, UInt(wordsize.W)))
-        val outlen = Output(UInt((log2Ceil(inwords*2)).W))
-        val out = Output(Vec(2*inwords, UInt(wordsize.W)))
+        val len1 = Input(UInt(log2Ceil(inwords1).W))
+        val data1 = Input(Vec(inwords1, UInt(wordsize.W)))
+        val len2 = Input(UInt(log2Ceil(inwords2).W))
+        val data2 = Input(Vec(inwords2, UInt(wordsize.W)))
+        val outlen = Output(UInt((log2Ceil(inwords1 + inwords2)).W))
+        val out = Output(Vec(inwords1 + inwords2, UInt(wordsize.W)))
     })
 
     val defaultval = if (default) (pow(2, wordsize) - 1).toInt else 0
 
     io.outlen := io.len1 +& io.len2
 
-    for (i <- 0 until minwords) {
-        io.out(i) := io.data1(i)
-    }
-
-
-
     if (set_all_unused_to_default) {
-        for (i <- minwords until inwords) {
+        for (i <- 0 until inwords1) {
             when (i.U < io.len1) {
                 io.out(i) := io.data1(i)
             }.elsewhen(i.U < io.len1 +& io.len2) {
@@ -54,7 +47,7 @@ class Merge(val inwords:Int = 41, val wordsize:Int = 4, val minwords:Int = 1, va
                 io.out(i) := defaultval.U
             }
         }
-        for (i <- inwords until 2*inwords) {
+        for (i <- inwords1 until inwords1 + inwords2) {
             when (i.U < io.len1 +& io.len2) {
                 io.out(i) := io.data2(i.U - io.len1)
             }.otherwise {
@@ -62,17 +55,17 @@ class Merge(val inwords:Int = 41, val wordsize:Int = 4, val minwords:Int = 1, va
             }
         }
     } else {
-        for (i <- minwords until inwords) {
+        for (i <- 0 until inwords1) {
             when (i.U < io.len1) {
                 io.out(i) := io.data1(i)
-            }.elsewhen(i.U < io.len1 +& inwords.U) {
+            }.elsewhen(i.U < io.len1 +& inwords1.U) {
                 io.out(i) := io.data2(i.U - io.len1)
             }.otherwise {
                 io.out(i) := defaultval.U
             }
         }
-        for (i <- inwords until 2*inwords) {
-            when (i.U < io.len1 +& inwords.U) {
+        for (i <- inwords1 until inwords1 + inwords2) {
+            when (i.U < io.len1 +& inwords1.U) {
                 io.out(i) := io.data2(i.U - io.len1)
             }.otherwise {
                 io.out(i) := defaultval.U
@@ -82,6 +75,6 @@ class Merge(val inwords:Int = 41, val wordsize:Int = 4, val minwords:Int = 1, va
 
 }
 
-object Merge extends App {
-    chisel3.Driver.execute(args, () => new Merge)
+object MergeAsymmetric extends App {
+    chisel3.Driver.execute(args, () => new MergeAsymmetric)
 }
