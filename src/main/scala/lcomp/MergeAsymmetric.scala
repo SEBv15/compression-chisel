@@ -13,9 +13,9 @@ import scala.math.pow
 /** Merge module which takes in two vecs of uints and their number of used elements, and outputs a single merged vec and its length.
  *
  *  @constructor Create a new merge module with custom parameters
- *  @param inwords Number of elements for the two input vecs
  *  @param wordsize UInt width of the vec elements
- *  @param minwords Number of elements that are guaranteed to be used (min length)
+ *  @param inwords1 Number of elements for the first input vec
+ *  @param inwords2 Number of elements for the second input vec
  *  @param set_all_unused_to_default If true, all elements outside of the used length will be set to the default value. Otherwise only elements outside of `input_1_length + #inwords` will be set to default. The second option probably produces simpler logic since it only depends on one variable.
  *  @param default The value bits with no input will be assigned. true = all ones, false = all zeros
  */
