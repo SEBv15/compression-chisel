@@ -26,11 +26,11 @@ class Merge(val inwords:Int = 41, val wordsize:Int = 4, val minwords:Int = 1, va
     require(minwords >= 0)
 
     val io = IO(new Bundle {
-        val len1 = Input(UInt(log2Ceil(inwords).W))
+        val len1 = Input(UInt(log2Ceil(inwords+1).W))
         val data1 = Input(Vec(inwords, UInt(wordsize.W)))
-        val len2 = Input(UInt(log2Ceil(inwords).W))
+        val len2 = Input(UInt(log2Ceil(inwords+1).W))
         val data2 = Input(Vec(inwords, UInt(wordsize.W)))
-        val outlen = Output(UInt((log2Ceil(inwords*2)).W))
+        val outlen = Output(UInt((log2Ceil(inwords*2+1)).W))
         val out = Output(Vec(2*inwords, UInt(wordsize.W)))
     })
 

@@ -25,11 +25,11 @@ class MergeAsymmetric(val wordsize:Int = 16, val inwords1:Int = 16, val inwords2
     require(inwords2 > 0)
 
     val io = IO(new Bundle {
-        val len1 = Input(UInt(log2Ceil(inwords1).W))
+        val len1 = Input(UInt((log2Ceil(inwords1) + 1).W))
         val data1 = Input(Vec(inwords1, UInt(wordsize.W)))
-        val len2 = Input(UInt(log2Ceil(inwords2).W))
+        val len2 = Input(UInt((log2Floor(inwords2) + 1).W))
         val data2 = Input(Vec(inwords2, UInt(wordsize.W)))
-        val outlen = Output(UInt((log2Ceil(inwords1 + inwords2)).W))
+        val outlen = Output(UInt((log2Floor(inwords1 + inwords2) + 1).W))
         val out = Output(Vec(inwords1 + inwords2, UInt(wordsize.W)))
     })
 
@@ -58,14 +58,14 @@ class MergeAsymmetric(val wordsize:Int = 16, val inwords1:Int = 16, val inwords2
         for (i <- 0 until inwords1) {
             when (i.U < io.len1) {
                 io.out(i) := io.data1(i)
-            }.elsewhen(i.U < io.len1 +& inwords1.U) {
+            }.elsewhen(i.U < io.len1 +& inwords2.U) {
                 io.out(i) := io.data2(i.U - io.len1)
             }.otherwise {
                 io.out(i) := defaultval.U
             }
         }
         for (i <- inwords1 until inwords1 + inwords2) {
-            when (i.U < io.len1 +& inwords1.U) {
+            when (i.U < io.len1 +& inwords2.U) {
                 io.out(i) := io.data2(i.U - io.len1)
             }.otherwise {
                 io.out(i) := defaultval.U

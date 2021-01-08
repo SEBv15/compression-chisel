@@ -28,7 +28,7 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
         val headerin = Input(Vec(ncompressors, UInt(4.W)))
         //val out = Output(UInt((ncompressors * 164).W))
         val out = Output(Vec(ncompressors*10 + (ncompressors/16*6).ceil.toInt, UInt(16.W))) // First ncompressors/4 words are the headers and the rest is the data
-        val outlen = Output(UInt(log2Ceil(ncompressors*10 + ncompressors/4).W))
+        val outlen = Output(UInt((log2Floor(ncompressors*10 + ncompressors/4) + 1).W))
     })
 
     // ------- DATA REDUCTION -------
@@ -62,8 +62,8 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
         // If number of blocks needs to be divided, group two inputs together before feeding it into the next stage
         if (merge) {
             for (i <- 0 until ncompressors/pow(2, n+1).toInt) {
-                stages(n)(i).io.len1 := (stages(n-1)(2*i).io.outlen + 1.U) / 2.U // Ceil division
-                stages(n)(i).io.len2 := (stages(n-1)(2*i+1).io.outlen + 1.U) / 2.U
+                stages(n)(i).io.len1 := (stages(n-1)(2*i).io.outlen +& 1.U) / 2.U // Ceil division
+                stages(n)(i).io.len2 := (stages(n-1)(2*i+1).io.outlen +& 1.U) / 2.U
                 stages(n)(i).io.data1 := (0 until nb).map(x => Cat(stages(n-1)(2*i).io.out(2*x+1), stages(n-1)(2*i).io.out(2*x)))
                 stages(n)(i).io.data2 := (0 until nb).map(x => Cat(stages(n-1)(2*i+1).io.out(2*x+1), stages(n-1)(2*i+1).io.out(2*x)))
             }
@@ -82,8 +82,10 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
 
     val header_stage1 = ListBuffer.fill(ncompressors/2)(Module(new Merge(1, 4, 0)))
     for (i <- 0 until ncompressors/2) {
-        header_stage1(i).io.len1 := io.headerin(2*i) > 2.U
-        header_stage1(i).io.len2 := io.headerin(2*i+1) > 2.U
+        when(io.headerin(2*i) > 2.U) {header_stage1(i).io.len1 := 1.U}.otherwise {header_stage1(i).io.len1 := 0.U}
+        when(io.headerin(2*i+1) > 2.U) {header_stage1(i).io.len2 := 1.U}.otherwise {header_stage1(i).io.len2 := 0.U}
+        //header_stage1(i).io.len1 := io.headerin(2*i) > 2.U
+        //header_stage1(i).io.len2 := io.headerin(2*i+1) > 2.U
         header_stage1(i).io.data1(0) := io.headerin(2*i)
         header_stage1(i).io.data2(0) := io.headerin(2*i+1)
     }
@@ -119,24 +121,24 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
     }
     
     // And the optional 4-bit header
-    val fourbit_header_16blocks = (0 until ncompressors/4).map(x => header_stages(header_stages.length - 1)(0).io.out.asUInt()(16*(x+1)-1, 16*x))
-    val fourbit_header_16blocks_length = (header_stages(header_stages.length - 1)(0).io.outlen + 3.U) / 4.U // Ceil divide length
-
-    // Turn the output from the last stage back into 16-bit words
-    val data_one_uint = stages(stages.length-1)(0).io.out.asUInt()
-    val data_16_bit_blocks = (0 until 10*ncompressors).map(x => data_one_uint(16*(x+1) - 1, 16*x))
-    val data_16_bit_blocks_length = stages(stages.length-1)(0).io.outlen * div.U
+    val fourbit_header_16xdivblocks = (0 until ncompressors/4/div).map(x => header_stages(header_stages.length - 1)(0).io.out.asUInt()(div*16*(x+1)-1, div*16*x))
+    val fourbit_header_16xdivblocks_length = (((header_stages(header_stages.length - 1)(0).io.outlen +& 3.U) / 4.U) +& (div-1).U) / div.U // Ceil divide length
 
     // ------ MERGE HIERARCHICAL HEADERS AND DATA ------
-    val merger = Module(new MergeAsymmetric(16, ncompressors/4, 10*ncompressors))
-    merger.io.data1 := fourbit_header_16blocks
-    merger.io.len1 := fourbit_header_16blocks_length
-    merger.io.data2 := data_16_bit_blocks
-    merger.io.len2 := data_16_bit_blocks_length
+    val merger = Module(new MergeAsymmetric(16*div, ncompressors/4/div, 10*ncompressors/div))
+    merger.io.data1 := fourbit_header_16xdivblocks
+    merger.io.len1 := fourbit_header_16xdivblocks_length
+    merger.io.data2 := stages(stages.length-1)(0).io.out
+    merger.io.len2 := stages(stages.length-1)(0).io.outlen
+
+    // Turn the output from the last stage back into 16-bit words
+    val data_one_uint = merger.io.out.asUInt()
+    val data_16_bit_blocks = (0 until 10*ncompressors + (ncompressors/4).toInt).map(x => data_one_uint(16*(x+1) - 1, 16*x))
+    val data_16_bit_blocks_length = merger.io.outlen * div.U
 
     // Output the headers and the data
-    io.out := headerout ++ merger.io.out
-    io.outlen := (ncompressors/4).U + merger.io.outlen
+    io.out := headerout ++ data_16_bit_blocks
+    io.outlen := (ncompressors/8).U +& data_16_bit_blocks_length
 }
 
 object Reduction4 extends App {

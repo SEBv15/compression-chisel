@@ -17,7 +17,7 @@ import scala.math.pow
  *  @param ncompressors The number of input compressor (expected to have vec of ten 16-bit UInts as output)
  *  @param maxblocks The maximum number of blocks/elements/words any merge stage should have as input (0 = no limit -> reduction v2)
  */
-class Reduction3(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Module {
+class Reduction3(val ncompressors:Int = 64, val maxblocks:Int = 64) extends Module {
     require(isPow2(ncompressors))
     require(ncompressors >= 4) // 4-bit headers need to be grouped into 16-bit UInts
     require(maxblocks >= 10 || maxblocks == 0)
