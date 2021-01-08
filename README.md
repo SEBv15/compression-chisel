@@ -54,8 +54,6 @@ Generating Verilog: `make reduction3verilog`
 
 Uses the same method as v3 for data reduction, but uses hierarchical headers with their own reduction logic instead of a static 4-bit header.
 
-To run the test case, you might have to increase your java heap memory or change the range of the for loop on [line 21](src/test/scala/lcomp/Reduction4Test.scala) to run less tests.
-
 Main file: [`Reduction4.scala`](src/main/scala/lcomp/Reduction4.scala)
 
 Running tests: `make reduction4test`
