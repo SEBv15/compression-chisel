@@ -12,7 +12,7 @@ class LengthCompress(val npixels:Int = 16, val pixelsize:Int = 10) extends Modul
     val io = IO(new Bundle {
         val in  = Input( Vec(npixels, UInt(pixelsize.W)))
         val data = Output(Vec(pixelsize, UInt(npixels.W)))
-        val header = Output(UInt(log2Ceil(pixelsize).W))
+        val header = Output(UInt((log2Floor(pixelsize) + 1).W))
     })
 
     val shuffle = Module(new BitShufflePerChannel(npixels, pixelsize))
@@ -22,7 +22,7 @@ class LengthCompress(val npixels:Int = 16, val pixelsize:Int = 10) extends Modul
     io.data := shuffle.io.out
 
     // There is probably a better way, but this works
-    val lengths = Wire(Vec(pixelsize, UInt(log2Ceil(pixelsize).W)))
+    val lengths = Wire(Vec(pixelsize, UInt((log2Floor(pixelsize) + 1).W)))
     for (i <- 0 until pixelsize) {
         lengths(i) := Mux(shuffle.io.out(i) === 0.U, if (i > 0) lengths(i - 1) else {0.U}, (i+1).U)
     }
