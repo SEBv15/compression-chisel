@@ -10,6 +10,18 @@ mergetest:
 mergeverilog:
 	sbt 'runMain lcomp.Merge'
 
+mergeasymmetrictest:
+	sbt 'testOnly lcomp.MergeAsymmetricTest --'
+
+mergeasymmetricverilog:
+	sbt 'runMain lcomp.MergeAsymmetric'
+
+mergeweirdtest:
+	sbt 'testOnly lcomp.MergeWeirdTest --'
+
+mergeweirdverilog:
+	sbt 'runMain lcomp.MergeWeird'
+
 reductiontest:
 	sbt 'testOnly lcomp.ReductionTest --'
 
@@ -33,3 +45,9 @@ reduction4test:
 
 reduction4verilog:
 	sbt 'runMain lcomp.Reduction4'
+
+hreductiontest:
+	sbt 'testOnly lcomp.HierarchicalReductionTest --'
+
+hreductionverilog:
+	sbt 'runMain lcomp.HierarchicalReduction'

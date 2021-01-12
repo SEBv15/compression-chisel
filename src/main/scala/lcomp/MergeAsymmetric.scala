@@ -19,7 +19,7 @@ import scala.math.pow
  *  @param set_all_unused_to_default If true, all elements outside of the used length will be set to the default value. Otherwise only elements outside of `input_1_length + #inwords` will be set to default. The second option probably produces simpler logic since it only depends on one variable.
  *  @param default The value bits with no input will be assigned. true = all ones, false = all zeros
  */
-class MergeAsymmetric(val wordsize:Int = 16, val inwords1:Int = 16, val inwords2:Int = 16, val set_all_unused_to_default:Boolean = false, val default:Boolean = false) extends Module {
+class MergeAsymmetric(val wordsize:Int = 16, val inwords1:Int = 10, val inwords2:Int = 10, val set_all_unused_to_default:Boolean = false, val default:Boolean = false) extends Module {
     require(wordsize > 0)
     require(inwords1 > 0)
     require(inwords2 > 0)
