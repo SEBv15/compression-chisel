@@ -51,3 +51,6 @@ hreductiontest:
 
 hreductionverilog:
 	sbt 'runMain lcomp.HierarchicalReduction'
+
+hreductionwrapperverilog:
+	sbt 'runMain lcomp.HierarchicalReductionWrapper'
