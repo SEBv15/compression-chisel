@@ -6,16 +6,24 @@ import chisel3.util._
 import scala.collection.mutable.ListBuffer
 import scala.math.pow
 
-/** Merges the output of many compressors into one semi-continous word using hierarchical reduction.
+/** Reverses the reduction circuit aurora block by aurora block.
+ *
+ *  To minimize the size of the circuit, it doesn't handle all the data that comes out of a reduction module at once, but just takes in blocks of data as the aurora interface sends it.
+ *  It does it by storing the headers sent in the beginning into registers and by not looking at the reduction in stages, but on a 16-bit block basis.
+ *  For every 16-bit block, the original position is calculated by an independent circuit. In the end this seems to be equally as efficient 
+ *  logic wise as the reduction since it roughly takes a tenth of the gates while looking at a tenth of the data.
  *  
  *  @constructor Create a compression module
- *  @param ncompressors The number of input compressor (expected to have vec of ten 16-bit UInts as output)
+ *  @param ncompressors The number of compressors the data came from
  *  @param maxblocks The maximum number of blocks/elements/words any merge stage should have as input (0 = no limit)
+ *  @param bits_per_pixel The number of bits per pixel (some lengths are hard coded, but it should work for values less than 16)
+ *  @param insize The number of bits to look at per tick
  */
 class Deduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val bits_per_pixel:Int = 10, val insize:Int = 1024) extends Module {
     require(insize % 16 == 0)
     require(ncompressors/8 + ncompressors/4 <= insize/16)
 
+    // Calculate the number of bits needed to represent the position where each 16-bit block belongs to
     val poswidth = log2Floor(ncompressors*16*bits_per_pixel) + 1
 
     val io = IO(new Bundle {
@@ -26,6 +34,7 @@ class Deduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val bits_per
         val write = Output(Vec(insize/16, Bool())) // If you should really do it though
     })
 
+    // Since we're not actually doing anything to the data itself, just pass it through
     io.out := io.in
 
     // Registers to store the length data for the following blocks which use the same headers
@@ -90,7 +99,7 @@ class Deduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val bits_per
     for (i <- 1 until log2Floor(ncompressors) + 1) {
         slengths.append(Wire(Vec(ncompressors/(1 << i), UInt((log2Floor(n) + 1).W))))
         for (j <- 0 until ncompressors/(1 << i)) {
-            if (n > maxblocks) {
+            if (n > maxblocks && maxblocks != 0) {
                 val t = Wire(UInt())
                 t := slengths(i-1)(2*j) +& slengths(i-1)(2*j+1)
                 //slengths(i)(j) := t +& ((m.U - (t % m.U)) % m.U) // round up to a multiple of m
