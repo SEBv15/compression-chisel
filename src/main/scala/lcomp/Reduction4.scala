@@ -27,7 +27,7 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
         val datain = Input(Vec(ncompressors, Vec(10, UInt(16.W))))
         val headerin = Input(Vec(ncompressors, UInt(4.W)))
         //val out = Output(UInt((ncompressors * 164).W))
-        val out = Output(Vec(ncompressors*10 + (ncompressors/16*6).ceil.toInt, UInt(16.W))) // First ncompressors/4 words are the headers and the rest is the data
+        val out = Output(Vec(ncompressors*10 + (ncompressors*6/16).ceil.toInt, UInt(16.W))) // First ncompressors/4 words are the headers and the rest is the data
         val outlen = Output(UInt((log2Floor(ncompressors*10 + ncompressors/4) + 1).W))
     })
 
@@ -105,7 +105,7 @@ class Reduction4(val ncompressors:Int = 64, val maxblocks:Int = 128) extends Mod
 
     // Is there a better way to do this???
     // Turn the headers from a 4-bit Vec into a 16-bit Vec
-    val headerout = Wire(Vec((ncompressors/16*2).ceil.toInt, UInt(16.W)))
+    val headerout = Wire(Vec((ncompressors*2/16).ceil.toInt, UInt(16.W)))
 
     // Construct the 2 bit headers
     val twobit_headers = Wire(Vec(ncompressors, UInt(2.W)))
