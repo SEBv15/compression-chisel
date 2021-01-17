@@ -27,9 +27,9 @@ class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, 
 
     val io = IO(new Bundle {
         val datain = Input(Vec(ncompressors, Vec(bits_per_pixel, UInt(16.W))))
-        val headerin = Input(Vec(ncompressors, UInt(4.W)))
-        val out = Output(Vec(ncompressors*bits_per_pixel + (ncompressors/16*6).ceil.toInt, UInt(16.W)))
-        val outlen = Output(UInt((log2Floor(ncompressors*bits_per_pixel + (ncompressors/16*6).ceil.toInt) + 1).W))
+        val headerin = Input(Vec(ncompressors, UInt((log2Floor(bits_per_pixel) + 1).W)))
+        val out = Output(Vec(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt, UInt(16.W)))
+        val outlen = Output(UInt((log2Floor(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt) + 1).W))
     })
 
     // Make 2-bit headers
