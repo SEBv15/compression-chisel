@@ -52,5 +52,14 @@ hreductiontest:
 hreductionverilog:
 	sbt 'runMain lcomp.HierarchicalReduction'
 
-hreductionwrapperverilog:
-	sbt 'runMain lcomp.HierarchicalReductionWrapper'
+creductionwrapperverilog:
+	sbt 'runMain lcomp.CompressionReductionWrapper'
+
+creductionverilog:
+	sbt 'runMain lcomp.CompressionReduction'
+
+deductionverilog:
+	sbt 'runMain lcomp.Deduction'
+
+deductiontest:
+	sbt 'testOnly lcomp.DeductionTest --'
