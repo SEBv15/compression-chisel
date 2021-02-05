@@ -22,30 +22,31 @@ class PatternEncoder extends Module {
     for (i <- 0 until 14) {
         encw(i+1) := encw(i) + (io.in(i)^io.in(i+1))
     }
-    enc := (encw(14) === 2.U && io.in(14) === 0.U) || (encw(14) === 1.U && (io.in(14) === 1.U || io.in(0) === 1.U)) || io.in === 0.U
+    //enc := (encw(14) === 2.U && io.in(14) === 0.U) || (encw(14) === 1.U && (io.in(14) === 1.U || io.in(0) === 1.U)) || io.in === 0.U
+    enc := encw(14) <= 2.U
 
-    // Calculate the position and length
+    // Calculate the position
     val posw = Wire(Vec(15, UInt(4.W)))
-    val lenw = Wire(Vec(15, UInt(4.W)))
-    posw(0) := 0.U
-    lenw(0) := io.in(0)
+    when (io.in(0)) {
+        posw(0) := 0.U
+    }.otherwise {
+        posw(0) := (0xf).U // Use 0xf as a placeholder since it is not a valid position
+    }
     for (i <- 1 until 15) {
-        when (io.in(i)) {
-            when (lenw(i-1) === 0.U) {
-                posw(i) := i.U
-                lenw(i) := 1.U
-            }.otherwise {
-                posw(i) := posw(i-1)
-                lenw(i) := lenw(i-1) + 1.U
-            }
+        // When the bit is 1 and 0xf indicates that it is the first 1, save it as the start of the run
+        when (io.in(i) && posw(i-1) === (0xf).U) {
+            posw(i) := i.U
         }.otherwise {
-            lenw(i) := lenw(i-1)
             posw(i) := posw(i-1)
         }
     }
 
-    io.canencode := enc && lenw(14) <= 7.U
-    io.out := posw(14) ## lenw(14)(2, 0)
+    // Get the run length by simply counting the number of 1s
+    val len = Wire(UInt(4.W))
+    len := PopCount(io.in)
+
+    io.canencode := enc && len(3) === 0.U // Run length needs to fit into 3 bits, aka the fourth bit is zero
+    io.out := posw(14) ## len(2, 0)
 }
 
 object PatternEncoder extends App {
