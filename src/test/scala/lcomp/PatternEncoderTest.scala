@@ -14,28 +14,42 @@ class PatternEncoderTest extends FlatSpec with ChiselScalatestTester with Matche
             c.io.in.poke(Integer.parseInt("111111111111111", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(0.B)
 
             c.io.in.poke(Integer.parseInt("000011111111111", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(0.B)
 
             c.io.in.poke(Integer.parseInt("111111111110000", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(0.B)
 
             c.io.in.poke(Integer.parseInt("000000001111000", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(1.B)
 
             c.io.in.poke(Integer.parseInt("000000000000000", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(1.B)
 
-            c.io.in.poke(Integer.parseInt("011111111110001", 2).U)
+            c.io.in.poke(Integer.parseInt("011110000000001", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(0.B)
 
+            c.io.in.poke(Integer.parseInt("000000000000001", 2).U)
+            println(c.io.canencode.peek().litValue())
+            println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(1.B)
 
+            c.io.in.poke(Integer.parseInt("100000000000000", 2).U)
+            println(c.io.canencode.peek().litValue())
+            println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(1.B)
         }
     }
 }
