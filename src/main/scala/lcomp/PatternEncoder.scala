@@ -23,7 +23,7 @@ class PatternEncoder extends Module {
         encw(i+1) := encw(i) + (io.in(i)^io.in(i+1))
     }
     //enc := (encw(14) === 2.U && io.in(14) === 0.U) || (encw(14) === 1.U && (io.in(14) === 1.U || io.in(0) === 1.U)) || io.in === 0.U
-    enc := encw(14) <= 2.U
+    enc := encw(14) <= 2.U && ~(io.in(14) === 1.U && io.in(0) === 1.U) // bits need to only have changed at most 2 times, and check for the 100000000000001 case
 
     // Calculate the position
     val posw = Wire(Vec(15, UInt(4.W)))
