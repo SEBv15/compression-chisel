@@ -63,3 +63,9 @@ deductionverilog:
 
 deductiontest:
 	sbt 'testOnly lcomp.DeductionTest --'
+
+encoderverilog:
+	sbt 'runMain lcomp.PatternEncoder'
+
+encodertest:
+	sbt 'testOnly lcomp.PatternEncoderTest --'
