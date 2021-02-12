@@ -16,14 +16,13 @@ class PatternEncoder extends Module {
     })
 
     // Calculate how many times consecutive bits are different to determine if the input can be encoded
-    val enc = Wire(Bool())
     val encw = Wire(Vec(15, UInt(4.W)))
     encw(0) := 0.U
     for (i <- 0 until 14) {
         encw(i+1) := encw(i) + (io.in(i)^io.in(i+1))
     }
     //enc := (encw(14) === 2.U && io.in(14) === 0.U) || (encw(14) === 1.U && (io.in(14) === 1.U || io.in(0) === 1.U)) || io.in === 0.U
-    enc := encw(14) <= 2.U && ~(io.in(14) === 1.U && io.in(0) === 1.U) // bits need to only have changed at most 2 times, and check for the 100000000000001 case
+    io.canencode := encw(14) <= 2.U && ~(encw(14) === 2.U && io.in(14) === 1.U && io.in(0) === 1.U) && io.in != 0.U // bits need to only have changed at most 2 times, and check for the 100000000000001 case, and cannot be zero
 
     // Calculate the position
     val posw = Wire(Vec(15, UInt(4.W)))
@@ -43,10 +42,13 @@ class PatternEncoder extends Module {
 
     // Get the run length by simply counting the number of 1s
     val len = Wire(UInt(4.W))
-    len := PopCount(io.in)
+    len := PopCount(io.in) - 1.U
 
-    io.canencode := enc && len(3) === 0.U // Run length needs to fit into 3 bits, aka the fourth bit is zero
-    io.out := posw(14) ## len(2, 0)
+    when (len(3) === 0.U) {
+        io.out := posw(14) ## len(2, 0)
+    }.otherwise {
+        io.out := (15.U - posw(14))(3, 0) ## (6.U - len(2, 0))(2, 0)
+    }
 }
 
 object PatternEncoder extends App {

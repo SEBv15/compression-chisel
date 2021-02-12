@@ -11,8 +11,15 @@ class PatternEncoderTest extends FlatSpec with ChiselScalatestTester with Matche
     def testPattern(c: PatternEncoder, pattern: String) {
         c.io.in.poke(Integer.parseInt(pattern, 2).U)
         val encoded = c.io.out.peek().litValue().toInt
-        val pos = encoded >> 3
-        val len = encoded & 7
+        var pos = encoded >> 3
+        var len = encoded & 7
+
+        if (pos + len >= 15) {
+            pos = 15 - pos
+            len = 14 - len
+        }
+
+        len += 1
 
         // Reconstruct input from encoded output
         var rstring = ""
@@ -24,16 +31,18 @@ class PatternEncoderTest extends FlatSpec with ChiselScalatestTester with Matche
             }
         }
 
+        println(rstring)
+
         // Check if reconstructed input matches input
         val canenc = Integer.parseInt(rstring, 2).toBinaryString == pattern
-        //assert((c.io.canencode.peek().litValue > 0) == canenc)
+        assert((c.io.canencode.peek().litValue > 0) == canenc)
 
         // Check if the module agrees
         c.io.canencode.expect(canenc.B)
         println("Checked " + pattern + " -> " + (if (canenc) "yes" else "no"))
     }
 
-    it should "test-merge-weird" in {
+    it should "test-encoder" in {
         // test case body here
         test(new PatternEncoder) { c =>
             // Simply check every single possible input
@@ -42,6 +51,11 @@ class PatternEncoderTest extends FlatSpec with ChiselScalatestTester with Matche
             }
 
             /*
+            c.io.in.poke(Integer.parseInt("000001000000000", 2).U)
+            println(c.io.canencode.peek().litValue())
+            println(c.io.out.peek().litValue().toInt.toBinaryString)
+            c.io.canencode.expect(0.B)
+
             c.io.in.poke(Integer.parseInt("111111111111111", 2).U)
             println(c.io.canencode.peek().litValue())
             println(c.io.out.peek().litValue().toInt.toBinaryString)
