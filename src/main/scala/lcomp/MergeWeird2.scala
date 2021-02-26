@@ -9,6 +9,8 @@ import chisel3._
 import chisel3.util._
 
 import scala.math.pow
+import scala.math.min
+import scala.math.max
 
 /** Merge module which takes in two vecs of uints and their number of used elements, and outputs a single merged vec and its length.
  *
@@ -16,14 +18,11 @@ import scala.math.pow
  *  @param wordsize UInt width of the vec elements
  *  @param inwords1 Number of elements for the first input vec
  *  @param inwords2 Number of elements for the second input vec
- *  @param multipleof Output length should be a multiple of this number or smaller
  */
-class MergeWeird(val wordsize:Int = 16, val inwords1:Int = 10, val inwords2:Int = 10, val multipleof:Int = 1) extends Module {
+class MergeWeird2(val wordsize:Int = 16, val inwords1:Int = 10, val inwords2:Int = 10, val minwords1: Int = 0, val minwords2: Int = 0) extends Module {
     require(wordsize > 0)
     require(inwords1 > 0)
     require(inwords2 > 0)
-    require(inwords1 <= inwords2) // Could probably be removed by adding another if statement
-    require(multipleof >= 1)
 
     val io = IO(new Bundle {
         val len1 = Input(UInt((log2Ceil(inwords1) + 1).W))
@@ -34,30 +33,38 @@ class MergeWeird(val wordsize:Int = 16, val inwords1:Int = 10, val inwords2:Int 
         val out = Output(Vec(inwords1 + inwords2, UInt(wordsize.W)))
     })
 
-    val len = Wire(UInt((log2Floor(inwords1 + inwords2) + 1).W))
+    def createMuxLookupList(position: Int) = {
+        val lookups = List.range(max(0, minwords2 - inwords1), min(inwords2, max(inwords2 - inwords1, 0) + position + 1)).map { from2 => from2.U -> io.data2(from2.U) }
+        lookups
+    }
+
     val pivot = Wire(UInt((log2Floor(inwords1 + inwords2) + 1).W))
-    len := io.len1 +& io.len2
+    val len = io.len1 +& io.len2
     when (len > inwords1.U) {
-        pivot := len - inwords1.U// + (multipleof.U - (len % multipleof.U)) 
+        pivot := len - inwords1.U
     }.otherwise {
-        pivot := 0.U// + (multipleof.U - (len % multipleof.U)) 
+        pivot := 0.U
     }
 
-    for (i <- 0 until inwords1) {
-        when (i.U < io.len1) {
-            io.out(i) := io.data1(i)
+    val offset = pivot - io.len1
+
+    for (i <- 0 until minwords1) {
+        io.out(i) := io.data1(i)
+    }
+    for (i <- minwords1 until inwords1) {
+        when (i.U >= io.len1) {
+            io.out(i) := MuxLookup(offset + i.U, if (i < inwords1) io.data1(i) else io.data2(i-inwords1), createMuxLookupList(i));
         }.otherwise {
-            io.out(i) := io.data2(pivot + i.U - io.len1)
+            io.out(i) := io.data1(i)
         }
-    }    
-
+    }
     for (i <- 0 until inwords2) {
-        io.out(i + inwords1) := io.data2(i)
+        io.out(inwords1 + i) := io.data2(i)
     }
 
-    io.outlen := len
+    io.outlen := io.len1 +& io.len2
 }
 
-object MergeWeird extends App {
-    chisel3.Driver.execute(args, () => new MergeWeird)
+object MergeWeird2 extends App {
+    chisel3.Driver.execute(args, () => new MergeWeird2)
 }

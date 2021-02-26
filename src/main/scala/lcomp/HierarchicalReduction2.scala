@@ -19,7 +19,7 @@ import scala.math.pow
  *  @param set_all_unused_to_default Gurantee that only used values are nonzero. Setting this true makes testing easier, but vastly increases the number of gates used.
  *  @param bits_per_pixel Define the number of bits per pixel
  */
-class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val set_all_unused_to_default:Boolean = false, val bits_per_pixel:Int = 10) extends Module {
+class HierarchicalReduction2(val ncompressors:Int = 64, val maxblocks:Int = 128, val set_all_unused_to_default:Boolean = false, val bits_per_pixel:Int = 10) extends Module {
     require(isPow2(ncompressors))
     require(ncompressors >= 8)
     require(ncompressors % 8 == 0)
@@ -31,6 +31,8 @@ class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, 
         val out = Output(Vec(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt, UInt(16.W)))
         val outlen = Output(UInt((log2Floor(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt) + 1).W))
     })
+
+    // ------ REDUCE THE HEADERS USING THE REGULAR REDUCTION MODULES ------
 
     // Make 2-bit headers
     val twobit_headers = Wire(Vec(ncompressors, UInt(2.W)))
@@ -53,22 +55,47 @@ class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, 
     val headers_16 = (0 until ncompressors/4).map(x => Cat(header_reducer.io.out.slice(4*x, 4*(x+1))))
     val headers_16_length = (header_reducer.io.outlength +& 3.U) / 4.U
 
-    // Reduce Data
-    val data_reducer = Module(new DataReduction(ncompressors, bits_per_pixel, 16, maxblocks, true, set_all_unused_to_default))
-    data_reducer.io.in := io.datain
-    data_reducer.io.inlengths := io.headerin
+    // ------ Create a list of merge input lengths at various stages ------
 
-    // Merge Headers and Data
-    val merger = Module(new Merger(16, ncompressors/4, ncompressors*bits_per_pixel, true))
-    merger.io.len1 := headers_16_length
-    merger.io.data1 := headers_16
-    merger.io.len2 := data_reducer.io.outlength
-    merger.io.data2 := data_reducer.io.out
+    val slengths = new ListBuffer[Vec[UInt]]()
+    slengths.append(Wire(Vec(ncompressors, UInt(4.W))))
+    for (i <- 0 until ncompressors) {
+        slengths(0)(i) := io.headerin(i)
+    }
 
-    io.out := twobit_headers_16 ++ merger.io.out
-    io.outlen := (ncompressors/8).U +& merger.io.outlen
+    var n = 10
+    var m = 2
+    for (i <- 1 until log2Floor(ncompressors) + 1) {
+        slengths.append(Wire(Vec(ncompressors/(1 << i), UInt((log2Floor(n) + 1).W))))
+        for (j <- 0 until ncompressors/(1 << i)) {
+            if (n > maxblocks && maxblocks != 0) {
+                val t = Wire(UInt())
+                t := slengths(i-1)(2*j) +& slengths(i-1)(2*j+1)
+                //slengths(i)(j) := t +& ((m.U - (t % m.U)) % m.U) // round up to a multiple of m
+                slengths(i)(j) := ((t +& (m-1).U)/m.U)*m.U // round up to a multiple of m
+            } else {
+                slengths(i)(j) := slengths(i-1)(2*j) +& slengths(i-1)(2*j+1)
+            }
+        }
+        if (n > maxblocks) {
+            m *= 2
+        }
+        n *= 2
+    }
+
+    // ------ Calculate where each output element should come from based on lengths ------
+    val stages = List.fill(log2Floor(ncompressors) + 1)(Wire(Vec(10*ncompressors, UInt())))
+    stages(0) := io.datain
+    var nmergers = ncompressors/2
+    for (i <- 1 until stages.length) {
+        for (j <- 0 until nmergers) {
+            
+        }
+
+        nmergers /= 2
+    }
 }
 
-object HierarchicalReduction extends App {
-    chisel3.Driver.execute(args, () => new HierarchicalReduction)
+object HierarchicalReduction2 extends App {
+    chisel3.Driver.execute(args, () => new HierarchicalReduction2)
 }

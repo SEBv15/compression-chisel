@@ -19,15 +19,16 @@ import scala.math.pow
  *  @param set_all_unused_to_default Gurantee that only used values are nonzero. Setting this true makes testing easier, but vastly increases the number of gates used.
  *  @param bits_per_pixel Define the number of bits per pixel
  */
-class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val set_all_unused_to_default:Boolean = false, val bits_per_pixel:Int = 10) extends Module {
+class HierarchicalReductionEncoded(val ncompressors:Int = 64, val maxblocks:Int = 128, val set_all_unused_to_default:Boolean = false, val bits_per_pixel:Int = 10) extends Module {
     require(isPow2(ncompressors))
     require(ncompressors >= 8)
-    require(ncompressors % 8 == 0)
+    require(ncompressors % 16 == 0)
     require(maxblocks > bits_per_pixel || maxblocks == 0)
 
     val io = IO(new Bundle {
-        val datain = Input(Vec(ncompressors, Vec(bits_per_pixel, UInt(16.W))))
+        val datain = Input(Vec(ncompressors, Vec(bits_per_pixel*2, UInt(8.W))))
         val headerin = Input(Vec(ncompressors, UInt((log2Floor(bits_per_pixel) + 1).W)))
+        val lengthin = Input(Vec(ncompressors, UInt((log2Floor(bits_per_pixel*2) + 1).W)))
         val out = Output(Vec(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt, UInt(16.W)))
         val outlen = Output(UInt((log2Floor(ncompressors*bits_per_pixel + (ncompressors*6/16).ceil.toInt) + 1).W))
     })
@@ -54,21 +55,23 @@ class HierarchicalReduction(val ncompressors:Int = 64, val maxblocks:Int = 128, 
     val headers_16_length = (header_reducer.io.outlength +& 3.U) / 4.U
 
     // Reduce Data
-    val data_reducer = Module(new DataReduction(ncompressors, bits_per_pixel, 16, maxblocks, true, set_all_unused_to_default))
+    val data_reducer = Module(new DataReduction(ncompressors, bits_per_pixel*2, 8, maxblocks, false, set_all_unused_to_default))
     data_reducer.io.in := io.datain
-    data_reducer.io.inlengths := io.headerin
+    data_reducer.io.inlengths := io.lengthin
 
     // Merge Headers and Data
     val merger = Module(new Merger(16, ncompressors/4, ncompressors*bits_per_pixel, true))
     merger.io.len1 := headers_16_length
     merger.io.data1 := headers_16
-    merger.io.len2 := data_reducer.io.outlength
-    merger.io.data2 := data_reducer.io.out
+    for (i <- 0 until ncompressors*bits_per_pixel) {
+        merger.io.data2(i) := Cat(data_reducer.io.out(2*i), data_reducer.io.out(2*i+1))
+    }
+    merger.io.len2 := (data_reducer.io.outlength + 1.U) / 2.U
 
     io.out := twobit_headers_16 ++ merger.io.out
     io.outlen := (ncompressors/8).U +& merger.io.outlen
 }
 
-object HierarchicalReduction extends App {
-    chisel3.Driver.execute(args, () => new HierarchicalReduction)
+object HierarchicalReductionEncoded extends App {
+    chisel3.Driver.execute(args, () => new HierarchicalReductionEncoded)
 }

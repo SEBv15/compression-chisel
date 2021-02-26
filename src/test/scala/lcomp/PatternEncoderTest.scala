@@ -14,32 +14,39 @@ class PatternEncoderTest extends FlatSpec with ChiselScalatestTester with Matche
         var pos = encoded >> 3
         var len = encoded & 7
 
-        if (pos + len >= 15) {
-            pos = 15 - pos
-            len = 14 - len
-        }
 
-        len += 1
-
-        // Reconstruct input from encoded output
-        var rstring = ""
-        for (i <- 0 until 15) {
-            if (14-i >= pos && 14-i < pos + len) {
-                rstring += "1"
-            } else {
-                rstring += "0"
+        if (pos == 15 && len == 7) {
+            assert(c.io.canencode.peek().litValue > 0)
+            assert("0" == pattern)
+        } else {
+            
+            if (pos + len >= 15) {
+                pos = 15 - pos
+                len = 14 - len
             }
+
+            len += 1
+
+            // Reconstruct input from encoded output
+            var rstring = ""
+            for (i <- 0 until 15) {
+                if (14-i >= pos && 14-i < pos + len) {
+                    rstring += "1"
+                } else {
+                    rstring += "0"
+                }
+            }
+
+            //println(rstring)
+
+            // Check if reconstructed input matches input
+            val canenc = Integer.parseInt(rstring, 2).toBinaryString == pattern
+            assert((c.io.canencode.peek().litValue > 0) == canenc)
+
+            // Check if the module agrees
+            c.io.canencode.expect(canenc.B)
+            //println("Checked " + pattern + " -> " + (if (canenc) "yes" else "no"))
         }
-
-        println(rstring)
-
-        // Check if reconstructed input matches input
-        val canenc = Integer.parseInt(rstring, 2).toBinaryString == pattern
-        assert((c.io.canencode.peek().litValue > 0) == canenc)
-
-        // Check if the module agrees
-        c.io.canencode.expect(canenc.B)
-        println("Checked " + pattern + " -> " + (if (canenc) "yes" else "no"))
     }
 
     it should "test-encoder" in {

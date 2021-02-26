@@ -19,7 +19,7 @@ import scala.math.pow
  *  @param blockwidth The size of the UInt in the vector
  *  @param maxblocks The maximum number of blocks/elements/words any merge stage should have as input (0 = no limit)
  */
-class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth:Int = 16, val maxblocks:Int = 128, val merge_weird:Boolean = true, val set_all_unused_to_default:Boolean = false) extends Module {
+class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth:Int = 16, val maxblocks:Int = 128, val merge_weird:Boolean = false, val set_all_unused_to_default:Boolean = false) extends Module {
     require(isPow2(ninputs))
     require(ninputs > 0)
     require(numblocks > 0)
@@ -34,7 +34,7 @@ class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth
     })
 
     // Make the first stage of mergers
-    val stage1 = ListBuffer.fill(ninputs/2)(Module(new Merger(blockwidth, numblocks, numblocks, merge_weird, set_all_unused_to_default)))
+    val stage1 = ListBuffer.fill(ninputs/2)(Module(new Merger2(blockwidth, numblocks, numblocks, 0, 0, merge_weird)))
     for (i <- 0 until ninputs/2) {
         stage1(i).io.len1 := io.inlengths(2*i)
         stage1(i).io.len2 := io.inlengths(2*i+1)
@@ -43,7 +43,7 @@ class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth
     }
 
     // Use a list for all the other stages
-    var stages:ListBuffer[ListBuffer[Merger]] = new ListBuffer[ListBuffer[Merger]]()
+    var stages:ListBuffer[ListBuffer[Merger2]] = new ListBuffer[ListBuffer[Merger2]]()
     stages.append(stage1)
 
     var nb = 2*numblocks; // number of blocks out of the first merge stage
@@ -57,7 +57,7 @@ class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth
             nb /= 2;
             merge = true;
         }
-        stages.append(ListBuffer.fill(ninputs/pow(2, n+1).toInt)(Module(new Merger(blockwidth*div, numblocks*pow(2, n).toInt/div, numblocks*pow(2, n).toInt/div, merge_weird, set_all_unused_to_default))))
+        stages.append(ListBuffer.fill(ninputs/pow(2, n+1).toInt)(Module(new Merger2(blockwidth*div, numblocks*pow(2, n).toInt/div, numblocks*pow(2, n).toInt/div, 0, 0, merge_weird))))
 
         // If number of blocks needs to be divided, group two inputs together before feeding it into the next stage
         if (merge) {

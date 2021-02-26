@@ -10,6 +10,12 @@ mergetest:
 mergeverilog:
 	sbt 'runMain lcomp.Merge'
 
+merge2test:
+	sbt 'testOnly lcomp.Merge2Test --'
+
+merge2verilog:
+	sbt 'runMain lcomp.Merge2'
+
 mergeasymmetrictest:
 	sbt 'testOnly lcomp.MergeAsymmetricTest --'
 
@@ -21,6 +27,12 @@ mergeweirdtest:
 
 mergeweirdverilog:
 	sbt 'runMain lcomp.MergeWeird'
+
+mergeweird2test:
+	sbt 'testOnly lcomp.MergeWeird2Test --'
+
+mergeweird2verilog:
+	sbt 'runMain lcomp.MergeWeird2'
 
 reductiontest:
 	sbt 'testOnly lcomp.ReductionTest --'
@@ -46,6 +58,9 @@ reduction4test:
 reduction4verilog:
 	sbt 'runMain lcomp.Reduction4'
 
+datareductionverilog:
+	sbt 'runMain lcomp.DataReduction'
+
 hreductiontest:
 	sbt 'testOnly lcomp.HierarchicalReductionTest --'
 
@@ -69,3 +84,12 @@ encoderverilog:
 
 encodertest:
 	sbt 'testOnly lcomp.PatternEncoderTest --'
+
+cencoderverilog:
+	sbt 'runMain lcomp.CompressWithEncoder'
+
+cencodertest:
+	sbt 'testOnly lcomp.CompressWithEncoderTest --'
+
+hreductionencverilog:
+	sbt 'runMain lcomp.HierarchicalReductionEncoded'

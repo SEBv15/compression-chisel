@@ -205,7 +205,7 @@ class Deduction(val ncompressors:Int = 64, val maxblocks:Int = 128, val bits_per
         }
     }
     for (i <- ncompressors/8 + ncompressors/4 until insize/16) {
-        when (i.U +& offset >= nheaderblocks +& slengths(slengths.length-1)(0)) { // Check if element is within the length
+        when (i.U +& offset >= nheaderblocks +& slengths(slengths.length-1)(0) || io.number > (ncompressors*10*16/insize).U) { // Check if element is within the length
             io.write(i) := 0.B
         }.otherwise {
             io.write(i) := 1.B
