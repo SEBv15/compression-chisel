@@ -3,13 +3,12 @@ package lcomp
 import chisel3._
 import chisel3.util._
 
-import scala.math.pow
 import scala.math.max
 
 /** Module that merges blocks until adding new data would make the length exceed 2048 bits. Also adds metadata to the beginning of every 1024-bit block.
  *  
  *
- *  @constructor Create a new merge module with custom parameters
+ *  @constructor Create a new EnsureBlocks module with custom parameters
  *  @param inbits Maximum number of bits the module can receive per tick
  *  @param wordsize Size of the input words of data
  *  @param reservebits How many bits in the beginning to use as metadata. One is used to indicate whether it's the first block, the rest is the frame number.

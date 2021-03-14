@@ -19,7 +19,7 @@ import scala.math.pow
  *  @param blockwidth The size of the UInt in the vector
  *  @param maxblocks The maximum number of blocks/elements/words any merge stage should have as input (0 = no limit)
  */
-class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth:Int = 16, val maxblocks:Int = 128, val merge_weird:Boolean = false, val set_all_unused_to_default:Boolean = false) extends Module {
+class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth:Int = 16, val maxblocks:Int = 128, val merge_weird:Boolean = true, val set_all_unused_to_default:Boolean = false) extends Module {
     require(isPow2(ninputs))
     require(ninputs > 0)
     require(numblocks > 0)
@@ -79,8 +79,16 @@ class DataReduction(val ninputs:Int = 64, val numblocks:Int = 10, val blockwidth
     }
 
     val data_uint = stages(stages.length - 1)(0).io.out.asUInt()
-    io.out := (0 until ninputs*numblocks).map(x => data_uint(blockwidth*(x + 1) - 1, blockwidth*x))
-    io.outlength := stages(stages.length - 1)(0).io.outlen * div.U
+    val out = Wire(Vec(ninputs*numblocks, UInt(blockwidth.W)))
+    out := (0 until ninputs*numblocks).map(x => data_uint(blockwidth*(x + 1) - 1, blockwidth*x))
+    val out_reg = List.fill(ninputs*numblocks)(RegInit(0.U(blockwidth.W)))
+    for (i <- 0 until out_reg.length) {
+        out_reg(i) := out(i)
+        io.out(i) := out_reg(i)
+    }
+    val outlength_reg = RegInit(0.U((log2Floor(ninputs*numblocks) + 1).W))
+    outlength_reg := stages(stages.length - 1)(0).io.outlen * div.U
+    io.outlength := outlength_reg
 }
 
 object DataReduction extends App {

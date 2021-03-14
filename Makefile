@@ -93,3 +93,12 @@ cencodertest:
 
 hreductionencverilog:
 	sbt 'runMain lcomp.HierarchicalReductionEncoded'
+
+ensureblocksverilog:
+	sbt 'runMain lcomp.EnsureBlocks'
+
+ensureblockstest:
+	sbt 'testOnly lcomp.EnsureBlocksTest --'
+
+poissonencodingverilog:
+	sbt 'runMain lcomp.PoissonEncoding'

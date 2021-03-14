@@ -25,7 +25,7 @@ class MergeWeird2(val wordsize:Int = 16, val inwords1:Int = 10, val inwords2:Int
     require(inwords2 > 0)
 
     val io = IO(new Bundle {
-        val len1 = Input(UInt((log2Ceil(inwords1) + 1).W))
+        val len1 = Input(UInt((log2Floor(inwords1) + 1).W))
         val data1 = Input(Vec(inwords1, UInt(wordsize.W)))
         val len2 = Input(UInt((log2Floor(inwords2) + 1).W))
         val data2 = Input(Vec(inwords2, UInt(wordsize.W)))

@@ -46,7 +46,7 @@ class HierarchicalReductionEncoded(val ncompressors:Int = 64, val maxblocks:Int 
     val twobit_headers_16 = (0 until ncompressors/8).map(x => Cat(twobit_headers.slice(8*x, 8*(x+1))))
 
     // Reduce Headers
-    val header_reducer = Module(new DataReduction(ncompressors, 1, 4, 0, false, set_all_unused_to_default))
+    val header_reducer = Module(new DataReduction(ncompressors, 1, 4, 0, true, set_all_unused_to_default))
     for (i <- 0 until ncompressors) {
         header_reducer.io.in(i)(0) := io.headerin(i)
         header_reducer.io.inlengths(i) := io.headerin(i) > 2.U
@@ -55,12 +55,12 @@ class HierarchicalReductionEncoded(val ncompressors:Int = 64, val maxblocks:Int 
     val headers_16_length = (header_reducer.io.outlength +& 3.U) / 4.U
 
     // Reduce Data
-    val data_reducer = Module(new DataReduction(ncompressors, bits_per_pixel*2, 8, maxblocks, false, set_all_unused_to_default))
+    val data_reducer = Module(new DataReduction(ncompressors, bits_per_pixel*2, 8, maxblocks, true, set_all_unused_to_default))
     data_reducer.io.in := io.datain
     data_reducer.io.inlengths := io.lengthin
 
     // Merge Headers and Data
-    val merger = Module(new Merger(16, ncompressors/4, ncompressors*bits_per_pixel, true))
+    val merger = Module(new Merger2(16, ncompressors/4, ncompressors*bits_per_pixel, 0, 0, true))
     merger.io.len1 := headers_16_length
     merger.io.data1 := headers_16
     for (i <- 0 until ncompressors*bits_per_pixel) {
